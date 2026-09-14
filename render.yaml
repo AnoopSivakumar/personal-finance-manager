@@ -17,7 +17,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: CLIENT_URL
-        value: https://pfm-frontend.onrender.com
+        value: https://pfm-frontend-fxgr.onrender.com
 
   - type: web
     name: pfm-frontend
@@ -27,7 +27,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://pfm-api.onrender.com/api
+        value: https://pfm-api-yded.onrender.com/api
     routes:
       - type: rewrite
         source: /*
