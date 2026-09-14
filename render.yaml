@@ -19,7 +19,7 @@ services:
       - key: CLIENT_URL
         value: https://pfm-frontend.onrender.com
 
-  - type: static
+  - type: static_site
     name: pfm-frontend
     rootDir: frontend
     buildCommand: npm install && npm run build
