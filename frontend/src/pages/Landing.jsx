@@ -25,7 +25,7 @@ export default function Landing() {
             </Link>
           ) : (
             <>
-              <Link to="/login" className="hidden px-3 py-2 font-medium text-slate-600 transition hover:text-[#173c35] sm:block">Sign in</Link>
+              <Link to="/login" className="px-3 py-2 font-medium text-slate-600 transition hover:text-[#173c35]">Sign in</Link>
               <Link to="/register" className="rounded-full bg-[#173c35] px-5 py-2.5 font-medium text-white transition hover:bg-[#24584e]">Sign Up</Link>
             </>
           )}
