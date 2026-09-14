@@ -4,14 +4,24 @@ const pool = require('../config/db');
 
 const DEFAULT_CATEGORIES = [
   { name: 'Salary', type: 'income' },
-  { name: 'Business', type: 'income' },
   { name: 'Other Income', type: 'income' },
+  { name: 'Freelance', type: 'income' },
+  { name: 'Business', type: 'income' },
+  { name: 'Investments', type: 'income' },
+  { name: 'Refunds', type: 'income' },
+  { name: 'Gifts', type: 'income' },
   { name: 'Food', type: 'expense' },
+  { name: 'Groceries', type: 'expense' },
   { name: 'Transport', type: 'expense' },
+  { name: 'Rent', type: 'expense' },
   { name: 'Bills & Utilities', type: 'expense' },
+  { name: 'Credit Card Bills', type: 'expense' },
   { name: 'Shopping', type: 'expense' },
+  { name: 'Movies & Entertainment', type: 'expense' },
   { name: 'Health', type: 'expense' },
-  { name: 'Entertainment', type: 'expense' },
+  { name: 'Education', type: 'expense' },
+  { name: 'Travel', type: 'expense' },
+  { name: 'Insurance', type: 'expense' },
   { name: 'Other Expense', type: 'expense' },
 ];
 

@@ -49,5 +49,33 @@ CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
 
+-- Add the standard categories to existing users without duplicating custom categories.
+INSERT INTO categories (user_id, name, type)
+SELECT users.id, defaults.name, defaults.type
+FROM users
+CROSS JOIN (VALUES
+  ('Salary', 'income'),
+  ('Other Income', 'income'),
+  ('Freelance', 'income'),
+  ('Business', 'income'),
+  ('Investments', 'income'),
+  ('Refunds', 'income'),
+  ('Gifts', 'income'),
+  ('Food', 'expense'),
+  ('Groceries', 'expense'),
+  ('Transport', 'expense'),
+  ('Rent', 'expense'),
+  ('Bills & Utilities', 'expense'),
+  ('Credit Card Bills', 'expense'),
+  ('Shopping', 'expense'),
+  ('Movies & Entertainment', 'expense'),
+  ('Health', 'expense'),
+  ('Education', 'expense'),
+  ('Travel', 'expense'),
+  ('Insurance', 'expense'),
+  ('Other Expense', 'expense')
+) AS defaults(name, type)
+ON CONFLICT (user_id, name, type) DO NOTHING;
+
 ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_amount_check;
 ALTER TABLE transactions ALTER COLUMN amount TYPE TEXT USING amount::TEXT;
