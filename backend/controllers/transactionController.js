@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { encryptAmount, decryptTransaction } = require('../config/encryption');
 
 async function validateCategory(categoryId, type, userId) {
   if (categoryId === null || categoryId === undefined || categoryId === '') return true;
@@ -28,9 +29,16 @@ async function addTransaction(req, res) {
       `INSERT INTO transactions (user_id, category_id, type, amount, description, transaction_date)
        VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_DATE))
        RETURNING *`,
-      [req.user.id, category_id || null, type, amount, description || null, transaction_date || null]
+      [
+        req.user.id,
+        category_id || null,
+        type,
+        encryptAmount(amount, req.user.id),
+        description || null,
+        transaction_date || null,
+      ]
     );
-    res.status(201).json(result.rows[0]);
+    res.status(201).json(decryptTransaction(result.rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error creating transaction.' });
@@ -95,19 +103,20 @@ async function getTransactions(req, res) {
 
     // Summary (income vs expense totals) matching the same filters, excluding pagination
     const summaryQuery = `
-      SELECT t.type, COALESCE(SUM(t.amount), 0) AS total
+      SELECT t.type, t.amount, t.user_id
       FROM transactions t
       WHERE ${whereClause}
-      GROUP BY t.type
     `;
     const summaryResult = await pool.query(summaryQuery, countParams);
     const summary = { income: 0, expense: 0 };
     summaryResult.rows.forEach((row) => {
-      summary[row.type] = Number(row.total);
+      summary[row.type] += decryptTransaction(row).amount;
     });
 
+    const transactions = dataResult.rows.map(decryptTransaction);
+
     res.json({
-      transactions: dataResult.rows,
+      transactions,
       total: Number(countResult.rows[0].count),
       page: parsedPage,
       limit: parsedLimit,
@@ -140,7 +149,7 @@ async function updateTransaction(req, res) {
     const current = existing.rows[0];
     const updated = {
       type: type || current.type,
-      amount: amount !== undefined ? amount : current.amount,
+      amount: amount !== undefined ? amount : decryptTransaction(current).amount,
       category_id: category_id !== undefined ? category_id : current.category_id,
       description: description !== undefined ? description : current.description,
       transaction_date: transaction_date || current.transaction_date,
@@ -161,10 +170,18 @@ async function updateTransaction(req, res) {
        SET type = $1, amount = $2, category_id = $3, description = $4, transaction_date = $5, updated_at = NOW()
        WHERE id = $6 AND user_id = $7
        RETURNING *`,
-      [updated.type, updated.amount, updated.category_id, updated.description, updated.transaction_date, id, req.user.id]
+      [
+        updated.type,
+        encryptAmount(updated.amount, req.user.id),
+        updated.category_id,
+        updated.description,
+        updated.transaction_date,
+        id,
+        req.user.id,
+      ]
     );
 
-    res.json(result.rows[0]);
+    res.json(decryptTransaction(result.rows[0]));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error updating transaction.' });

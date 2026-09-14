@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const pool = require('./config/db');
+const { migrateLegacyAmounts } = require('./config/encryption');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -30,6 +32,15 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+
+async function startServer() {
+  await migrateLegacyAmounts(pool);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+startServer().catch((err) => {
+  console.error('Failed to initialize encrypted transaction storage.', err);
+  process.exit(1);
 });

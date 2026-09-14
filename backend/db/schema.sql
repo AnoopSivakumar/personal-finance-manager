@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
   type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
-  amount NUMERIC(12, 2) NOT NULL CHECK (amount > 0),
+  amount TEXT NOT NULL,
   description VARCHAR(255),
   transaction_date DATE NOT NULL DEFAULT CURRENT_DATE,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -48,3 +48,6 @@ CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
+
+ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_amount_check;
+ALTER TABLE transactions ALTER COLUMN amount TYPE TEXT USING amount::TEXT;
