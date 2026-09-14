@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +10,7 @@ const highlights = [
 
 export default function Landing() {
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <main className="min-h-screen overflow-hidden text-slate-900">
@@ -18,7 +19,7 @@ export default function Landing() {
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#173c35] text-lg text-[#d9f36b]">₹</span>
           <span>Finance Manager</span>
         </Link>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="hidden items-center gap-3 text-sm sm:flex">
           {user ? (
             <Link to="/dashboard" className="rounded-full bg-[#173c35] px-5 py-2.5 font-medium text-white transition hover:bg-[#24584e]">
               Open dashboard
@@ -30,7 +31,52 @@ export default function Landing() {
             </>
           )}
         </div>
+        <button
+          type="button"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#173c35]/15 bg-white/40 text-[#173c35] sm:hidden"
+        >
+          <span className="sr-only">{menuOpen ? 'Close menu' : 'Open menu'}</span>
+          <span className="flex w-5 flex-col gap-1">
+            <span className="h-0.5 w-full bg-current" />
+            <span className="h-0.5 w-full bg-current" />
+            <span className="h-0.5 w-full bg-current" />
+          </span>
+        </button>
       </nav>
+
+      {menuOpen && (
+        <div className="mx-5 mb-2 rounded-2xl border border-white/60 bg-white/55 p-3 shadow-lg backdrop-blur-xl sm:hidden">
+          {user ? (
+            <Link
+              to="/dashboard"
+              onClick={() => setMenuOpen(false)}
+              className="block rounded-xl bg-[#173c35] px-4 py-3 text-center text-sm font-medium text-white"
+            >
+              Open dashboard
+            </Link>
+          ) : (
+            <div className="grid gap-2">
+              <Link
+                to="/login"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl px-4 py-3 text-center text-sm font-medium text-[#173c35]"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl bg-[#173c35] px-4 py-3 text-center text-sm font-medium text-white"
+              >
+                Sign up
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-12 lg:grid-cols-[1fr_0.9fr] lg:px-8 lg:pb-28 lg:pt-20">
         <div className="max-w-xl">
