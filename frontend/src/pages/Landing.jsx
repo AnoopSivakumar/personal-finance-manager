@@ -12,7 +12,7 @@ export default function Landing() {
   const { user } = useAuth();
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f5f3ed] text-slate-900">
+    <main className="min-h-screen overflow-hidden text-slate-900">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6 lg:px-8">
         <Link to="/" className="flex items-center gap-3 font-semibold tracking-tight">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#173c35] text-lg text-[#d9f36b]">₹</span>
