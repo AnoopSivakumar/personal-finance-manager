@@ -14,6 +14,8 @@ export default function Profile() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [cropSource, setCropSource] = useState('');
+  const [cropZoom, setCropZoom] = useState(1);
   const hasChanges = form.name !== (user?.name || '')
     || form.email !== (user?.email || '')
     || form.profile_picture !== (user?.profile_picture || '')
@@ -38,11 +40,45 @@ export default function Profile() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setForm((prev) => ({ ...prev, profile_picture: reader.result }));
+      setCropSource(reader.result);
+      setCropZoom(1);
       setError('');
     };
     reader.onerror = () => setError('Could not read that image. Please try again.');
     reader.readAsDataURL(file);
+  }
+
+  function cancelCrop() {
+    setCropSource('');
+    setCropZoom(1);
+  }
+
+  function applyCrop() {
+    const image = new Image();
+    image.onload = () => {
+      const cropSize = Math.min(image.naturalWidth, image.naturalHeight) / cropZoom;
+      const sourceX = (image.naturalWidth - cropSize) / 2;
+      const sourceY = (image.naturalHeight - cropSize) / 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const context = canvas.getContext('2d');
+      context.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        cropSize,
+        cropSize,
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      );
+      setForm((prev) => ({ ...prev, profile_picture: canvas.toDataURL('image/jpeg', 0.9) }));
+      cancelCrop();
+    };
+    image.onerror = () => setError('Could not crop that image. Please try another one.');
+    image.src = cropSource;
   }
 
   async function handleSubmit(e) {
@@ -153,6 +189,57 @@ export default function Profile() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+
+        {cropSource && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="crop-title"
+              className="w-full max-w-md bg-cream p-5 rounded-xl border border-line shadow-2xl"
+            >
+              <h2 id="crop-title" className="text-lg font-semibold text-ink">Crop profile picture</h2>
+              <p className="text-sm text-ink/60 mt-1 mb-4">Adjust the zoom, then apply the square crop.</p>
+              <div className="mx-auto w-64 h-64 rounded-xl overflow-hidden bg-ink/10 border border-line">
+                <img
+                  src={cropSource}
+                  alt="Crop preview"
+                  className="w-full h-full object-cover"
+                  style={{ transform: `scale(${cropZoom})` }}
+                />
+              </div>
+              <label className="block text-sm font-medium text-ink/70 mt-4 mb-1" htmlFor="crop-zoom">
+                Zoom
+              </label>
+              <input
+                id="crop-zoom"
+                type="range"
+                min="1"
+                max="3"
+                step="0.05"
+                value={cropZoom}
+                onChange={(event) => setCropZoom(Number(event.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-end gap-3 mt-5">
+                <button
+                  type="button"
+                  onClick={cancelCrop}
+                  className="px-4 py-2 rounded-lg border border-line text-ink/70 hover:bg-paper transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={applyCrop}
+                  className="bg-lime hover:bg-lime-hover text-ink font-medium px-4 py-2 rounded-lg transition"
+                >
+                  Apply Crop
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <p className="text-xs text-ink/50 mt-4">
           Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}
