@@ -157,7 +157,7 @@ export default function TransactionForm({ editingTransaction, onSaved, onCancel 
           disabled={submitting}
           className="bg-blue-600 hover:bg-blue-700 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
         >
-          {submitting ? 'Saving...' : editingTransaction ? 'Update' : 'Add Transaction'}
+          {submitting ? 'Saving...' : editingTransaction ? 'Update' : 'Submit'}
         </button>
         {editingTransaction && (
           <button

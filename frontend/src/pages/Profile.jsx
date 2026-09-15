@@ -14,6 +14,10 @@ export default function Profile() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const hasChanges = form.name !== (user?.name || '')
+    || form.email !== (user?.email || '')
+    || form.profile_picture !== (user?.profile_picture || '')
+    || form.password !== '';
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -143,7 +147,7 @@ export default function Profile() {
 
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !hasChanges}
             className="bg-lime hover:bg-lime-hover text-ink font-medium px-4 py-2 rounded-lg transition disabled:opacity-60"
           >
             {saving ? 'Saving...' : 'Save Changes'}
