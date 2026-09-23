@@ -25,30 +25,49 @@ export default function EventDetails() {
 
   function downloadStatement() {
     if (!event) return;
-    const document = new jsPDF();
+    const document = new jsPDF({ unit: 'mm', format: 'a4' });
     const pageWidth = document.internal.pageSize.getWidth();
     const pageHeight = document.internal.pageSize.getHeight();
-    const left = 14;
-    const right = pageWidth - 14;
-    let y = 18;
+    const margin = 14;
+    const contentWidth = pageWidth - margin * 2;
+    const tableTop = 84;
+    let y = tableTop;
 
+    function addPageFooter() {
+      const pageNumber = document.getNumberOfPages();
+      document.setDrawColor(229, 231, 235);
+      document.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
+      document.setFontSize(8);
+      document.setTextColor(107, 114, 128);
+      document.text(`Generated ${new Date().toLocaleDateString()}`, margin, pageHeight - 7);
+      document.text(`Page ${pageNumber}`, pageWidth - margin, pageHeight - 7, { align: 'right' });
+    }
+
+    document.setFillColor(31, 41, 55);
+    document.rect(0, 0, pageWidth, 7, 'F');
     document.setFontSize(20);
+    document.setFont('helvetica', 'bold');
     document.setTextColor(31, 41, 55);
-    document.text(event.name, left, y);
-    y += 8;
+    const title = document.splitTextToSize(event.name, contentWidth - 45);
+    document.text(title, margin, 24);
+    document.setFont('helvetica', 'normal');
     document.setFontSize(10);
     document.setTextColor(107, 114, 128);
-    document.text('Event financial statement', left, y);
-    y += 12;
+    document.text('Event financial statement', margin, 35);
+    document.setFontSize(9);
+    document.text(`Prepared on ${new Date().toLocaleDateString()}`, pageWidth - margin, 35, { align: 'right' });
+    document.setDrawColor(229, 231, 235);
+    document.line(margin, 41, pageWidth - margin, 41);
 
     const summaryItems = [
       ['Income', event.summary.income, [22, 163, 74]],
       ['Expenses', event.summary.expense, [194, 65, 60]],
       ['Balance', event.summary.balance, [31, 41, 55]],
     ];
-    const boxWidth = (right - left - 8) / 3;
+    const boxGap = 4;
+    const boxWidth = (contentWidth - boxGap * 2) / 3;
     summaryItems.forEach(([label, amount, color], index) => {
-      const x = left + index * (boxWidth + 4);
+      const x = margin + index * (boxWidth + boxGap);
       document.setFillColor(248, 247, 242);
       document.roundedRect(x, y, boxWidth, 20, 2, 2, 'F');
       document.setFontSize(9);
@@ -56,36 +75,43 @@ export default function EventDetails() {
       document.text(label, x + 4, y + 7);
       document.setFontSize(12);
       document.setTextColor(...color);
+      document.setFont('helvetica', 'bold');
       document.text(`INR ${Number(amount).toFixed(2)}`, x + 4, y + 15);
+      document.setFont('helvetica', 'normal');
     });
     y += 30;
 
     const columns = [
-      { label: 'Date', width: 27 },
-      { label: 'Description', width: 63 },
-      { label: 'Category', width: 43 },
-      { label: 'Type', width: 25 },
-      { label: 'Amount', width: 29 },
+      { label: 'Date', width: 27, align: 'left' },
+      { label: 'Description', width: 55, align: 'left' },
+      { label: 'Category', width: 38, align: 'left' },
+      { label: 'Type', width: 25, align: 'left' },
+      { label: 'Amount', width: 37, align: 'right' },
     ];
+    const tableRight = margin + columns.reduce((total, column) => total + column.width, 0);
     const drawHeader = () => {
       document.setFillColor(238, 236, 228);
-      document.rect(left, y, right - left, 9, 'F');
+      document.roundedRect(margin, y, contentWidth, 9, 1, 1, 'F');
       document.setFontSize(8);
+      document.setFont('helvetica', 'bold');
       document.setTextColor(75, 85, 99);
-      let x = left + 3;
+      let x = margin + 3;
       columns.forEach((column) => {
-        document.text(column.label, x, y + 6);
+        const textX = column.align === 'right' ? x + column.width - 6 : x;
+        document.text(column.label, textX, y + 6, { align: column.align });
         x += column.width;
       });
+      document.setFont('helvetica', 'normal');
       y += 13;
     };
 
     drawHeader();
     event.transactions.forEach((transaction) => {
-      const description = document.splitTextToSize(transaction.description || '-', 57);
-      const category = document.splitTextToSize(transaction.category_name || 'Uncategorized', 37);
-      const rowHeight = Math.max(description.length, category.length, 1) * 4 + 5;
+      const description = document.splitTextToSize(transaction.description || '-', 49);
+      const category = document.splitTextToSize(transaction.category_name || 'Uncategorized', 32);
+      const rowHeight = Math.max(description.length, category.length, 1) * 4 + 7;
       if (y + rowHeight > pageHeight - 14) {
+        addPageFooter();
         document.addPage();
         y = 18;
         drawHeader();
@@ -93,22 +119,25 @@ export default function EventDetails() {
       document.setFontSize(8);
       document.setTextColor(55, 65, 81);
       const values = [
-        transaction.transaction_date,
+        new Date(`${transaction.transaction_date}T00:00:00`).toLocaleDateString(),
         description,
         category,
-        transaction.type,
+        transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1),
         `INR ${Number(transaction.amount).toFixed(2)}`,
       ];
-      let x = left + 3;
+      let x = margin + 3;
       values.forEach((value, index) => {
-        document.text(value, x, y + 4);
+        const column = columns[index];
+        const textX = column.align === 'right' ? x + column.width - 6 : x;
+        document.text(value, textX, y + 4, { align: column.align });
         x += columns[index].width;
       });
       document.setDrawColor(229, 231, 235);
-      document.line(left, y + rowHeight, right, y + rowHeight);
+      document.line(margin, y + rowHeight, tableRight, y + rowHeight);
       y += rowHeight;
     });
 
+    addPageFooter();
     document.save(`${event.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-statement.pdf`);
   }
 
