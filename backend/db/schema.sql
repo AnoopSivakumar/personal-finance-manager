@@ -49,6 +49,25 @@ CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category_id
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(transaction_date);
 CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
 
+-- =========================
+-- Table: events
+-- Groups income and expense records for trips, parties, and other activities.
+-- =========================
+CREATE TABLE IF NOT EXISTS events (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(150) NOT NULL,
+  description VARCHAR(500),
+  start_date DATE,
+  end_date DATE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS event_id INTEGER REFERENCES events(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_events_user ON events(user_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_event ON transactions(event_id);
+
 -- Add the standard categories to existing users without duplicating custom categories.
 INSERT INTO categories (user_id, name, type)
 SELECT users.id, defaults.name, defaults.type

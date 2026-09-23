@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Profile from './pages/Profile';
 import Landing from './pages/Landing';
+import Events from './pages/Events';
+import EventDetails from './pages/EventDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -25,6 +27,14 @@ export default function App() {
             <Transactions />
           </ProtectedRoute>
         }
+      />
+      <Route
+        path="/events"
+        element={<ProtectedRoute><Events /></ProtectedRoute>}
+      />
+      <Route
+        path="/events/:id"
+        element={<ProtectedRoute><EventDetails /></ProtectedRoute>}
       />
       <Route
         path="/profile"

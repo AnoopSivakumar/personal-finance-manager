@@ -10,9 +10,18 @@ async function validateCategory(categoryId, type, userId) {
   return result.rows.length > 0;
 }
 
+async function validateEvent(eventId, userId) {
+  if (eventId === null || eventId === undefined || eventId === '') return true;
+  const result = await pool.query(
+    'SELECT 1 FROM events WHERE id = $1 AND user_id = $2',
+    [eventId, userId]
+  );
+  return result.rows.length > 0;
+}
+
 // POST /api/transactions
 async function addTransaction(req, res) {
-  const { type, amount, category_id, description, transaction_date } = req.body;
+  const { type, amount, category_id, event_id, description, transaction_date } = req.body;
 
   if (!type || !['income', 'expense'].includes(type)) {
     return res.status(400).json({ message: 'Type must be "income" or "expense".' });
@@ -25,13 +34,17 @@ async function addTransaction(req, res) {
     if (!(await validateCategory(category_id, type, req.user.id))) {
       return res.status(400).json({ message: 'Category is invalid for this transaction.' });
     }
+    if (!(await validateEvent(event_id, req.user.id))) {
+      return res.status(400).json({ message: 'Event is invalid for this transaction.' });
+    }
     const result = await pool.query(
-      `INSERT INTO transactions (user_id, category_id, type, amount, description, transaction_date)
-       VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_DATE))
+      `INSERT INTO transactions (user_id, category_id, event_id, type, amount, description, transaction_date)
+       VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, CURRENT_DATE))
        RETURNING *`,
       [
         req.user.id,
         category_id || null,
+        event_id || null,
         type,
         encryptAmount(amount, req.user.id),
         description || null,
@@ -47,7 +60,7 @@ async function addTransaction(req, res) {
 
 // GET /api/transactions?type=&category_id=&startDate=&endDate=&page=&limit=
 async function getTransactions(req, res) {
-  const { type, category_id, startDate, endDate, page = 1, limit = 20 } = req.query;
+  const { type, category_id, event_id, startDate, endDate, page = 1, limit = 20 } = req.query;
   const parsedPage = Number(page);
   const parsedLimit = Number(limit);
 
@@ -70,6 +83,13 @@ async function getTransactions(req, res) {
     if (category_id) {
       conditions.push(`t.category_id = $${idx++}`);
       params.push(category_id);
+    }
+    if (event_id) {
+      if (!(await validateEvent(event_id, req.user.id))) {
+        return res.status(404).json({ message: 'Event not found.' });
+      }
+      conditions.push(`t.event_id = $${idx++}`);
+      params.push(event_id);
     }
     if (startDate) {
       conditions.push(`t.transaction_date >= $${idx++}`);
@@ -134,7 +154,7 @@ async function getTransactions(req, res) {
 
 // PUT /api/transactions/:id
 async function updateTransaction(req, res) {
-  const { type, amount, category_id, description, transaction_date } = req.body;
+  const { type, amount, category_id, event_id, description, transaction_date } = req.body;
   const { id } = req.params;
 
   try {
@@ -151,6 +171,7 @@ async function updateTransaction(req, res) {
       type: type || current.type,
       amount: amount !== undefined ? amount : decryptTransaction(current).amount,
       category_id: category_id !== undefined ? category_id : current.category_id,
+      event_id: event_id !== undefined ? event_id : current.event_id,
       description: description !== undefined ? description : current.description,
       transaction_date: transaction_date || current.transaction_date,
     };
@@ -164,16 +185,20 @@ async function updateTransaction(req, res) {
     if (!(await validateCategory(updated.category_id, updated.type, req.user.id))) {
       return res.status(400).json({ message: 'Category is invalid for this transaction.' });
     }
+    if (!(await validateEvent(updated.event_id, req.user.id))) {
+      return res.status(400).json({ message: 'Event is invalid for this transaction.' });
+    }
 
     const result = await pool.query(
       `UPDATE transactions
-       SET type = $1, amount = $2, category_id = $3, description = $4, transaction_date = $5, updated_at = NOW()
+      SET type = $1, amount = $2, category_id = $3, event_id = $4, description = $5, transaction_date = $6, updated_at = NOW()
        WHERE id = $6 AND user_id = $7
        RETURNING *`,
       [
         updated.type,
         encryptAmount(updated.amount, req.user.id),
         updated.category_id,
+        updated.event_id || null,
         updated.description,
         updated.transaction_date,
         id,

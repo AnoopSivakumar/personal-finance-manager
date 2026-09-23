@@ -28,6 +28,7 @@ export default function Navbar() {
             <div className="hidden sm:flex gap-2">
               <Link to="/dashboard" className={linkClass('/dashboard')}>Dashboard</Link>
               <Link to="/transactions" className={linkClass('/transactions')}>Transactions</Link>
+              <Link to="/events" className={linkClass('/events')}>Events</Link>
               <Link to="/profile" className={linkClass('/profile')}>Profile</Link>
             </div>
           )}
@@ -59,6 +60,7 @@ export default function Navbar() {
         <div className="flex sm:hidden justify-around border-t border-line py-1">
           <Link to="/dashboard" className={linkClass('/dashboard')}>Dashboard</Link>
           <Link to="/transactions" className={linkClass('/transactions')}>Transactions</Link>
+          <Link to="/events" className={linkClass('/events')}>Events</Link>
           <Link to="/profile" className={linkClass('/profile')}>Profile</Link>
         </div>
       )}

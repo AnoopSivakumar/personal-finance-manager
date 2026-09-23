@@ -5,13 +5,15 @@ const emptyForm = {
   type: 'expense',
   amount: '',
   category_id: '',
+  event_id: '',
   description: '',
   transaction_date: new Date().toISOString().slice(0, 10),
 };
 
-export default function TransactionForm({ editingTransaction, onSaved, onCancel }) {
+export default function TransactionForm({ editingTransaction, onSaved, onCancel, eventId = null }) {
   const [form, setForm] = useState(emptyForm);
   const [categories, setCategories] = useState([]);
+  const [events, setEvents] = useState([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -21,6 +23,7 @@ export default function TransactionForm({ editingTransaction, onSaved, onCancel 
         type: editingTransaction.type,
         amount: editingTransaction.amount,
         category_id: editingTransaction.category_id || '',
+        event_id: editingTransaction.event_id || '',
         description: editingTransaction.description || '',
         transaction_date: editingTransaction.transaction_date?.slice(0, 10) || emptyForm.transaction_date,
       });
@@ -40,6 +43,19 @@ export default function TransactionForm({ editingTransaction, onSaved, onCancel 
     }
     fetchCategories();
   }, [form.type]);
+
+  useEffect(() => {
+    if (eventId !== null) return;
+    async function fetchEvents() {
+      try {
+        const { data } = await api.get('/events');
+        setEvents(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    fetchEvents();
+  }, [eventId]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -62,6 +78,7 @@ export default function TransactionForm({ editingTransaction, onSaved, onCancel 
         category_id: form.category_id || null,
         amount: Number(form.amount),
       };
+      payload.event_id = eventId !== null ? eventId : (form.event_id || null);
 
       if (editingTransaction) {
         await api.put(`/transactions/${editingTransaction.id}`, payload);
@@ -137,6 +154,23 @@ export default function TransactionForm({ editingTransaction, onSaved, onCancel 
             className="w-full border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
+
+        {eventId === null && (
+          <div>
+            <label className="block text-sm font-medium text-ink/70 mb-1">Event</label>
+            <select
+              name="event_id"
+              value={form.event_id}
+              onChange={handleChange}
+              className="w-full border border-line rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">No event</option>
+              {events.map((event) => (
+                <option key={event.id} value={event.id}>{event.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="sm:col-span-2">
           <label className="block text-sm font-medium text-ink/70 mb-1">Description</label>
