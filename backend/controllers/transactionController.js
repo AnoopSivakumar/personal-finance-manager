@@ -192,7 +192,7 @@ async function updateTransaction(req, res) {
     const result = await pool.query(
       `UPDATE transactions
       SET type = $1, amount = $2, category_id = $3, event_id = $4, description = $5, transaction_date = $6, updated_at = NOW()
-       WHERE id = $6 AND user_id = $7
+      WHERE id = $7 AND user_id = $8
        RETURNING *`,
       [
         updated.type,
