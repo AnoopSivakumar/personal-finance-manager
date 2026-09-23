@@ -6,6 +6,14 @@ import Navbar from '../components/Navbar';
 import TransactionForm from '../components/TransactionForm';
 import TransactionList from '../components/TransactionList';
 
+function formatStatementDate(value) {
+  if (!value) return '-';
+  const dateText = String(value).slice(0, 10);
+  const date = new Date(`${dateText}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString();
+}
+
 export default function EventDetails() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
@@ -119,7 +127,7 @@ export default function EventDetails() {
       document.setFontSize(8);
       document.setTextColor(55, 65, 81);
       const values = [
-        new Date(`${transaction.transaction_date}T00:00:00`).toLocaleDateString(),
+        formatStatementDate(transaction.transaction_date),
         description,
         category,
         transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1),
